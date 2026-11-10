@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>枫枝螃蟹 · 演示</title>
+<style>
+/* ── 组件要的那组 token。放进你自己的页面时，照抄这一段或者换成你自己的颜色 ── */
+:root{
+  --bg:#f4f1ec; --card:#fffdfa; --card2:#faf7f1;
+  --ink:#453d36; --sub:#776f68; --hint:#7b6f64; --line:#e4ded6;
+  --accent:#b5533a; --accent-soft:#f2e3dc;
+  --me:#e6e9f2;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161d; --card:#1a1f28; --card2:#161b23;
+    --ink:#eef2f7; --sub:#9aabbf; --hint:#7b889b; --line:rgba(255,255,255,.09);
+    --accent:#e0a373; --accent-soft:rgba(224,163,115,.15);
+    --me:#243042;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161d; --card:#1a1f28; --card2:#161b23;
+  --ink:#eef2f7; --sub:#9aabbf; --hint:#7b889b; --line:rgba(255,255,255,.09);
+  --accent:#e0a373; --accent-soft:rgba(224,163,115,.15);
+  --me:#243042;
+}
+
+/* ── 预览台：桌面那一圈只是托着手机 ── */
+*{box-sizing:border-box}
+html,body{margin:0;background:#e7e5e1;color:#2b2724}
+@media (prefers-color-scheme:dark){html:not([data-theme="light"]),html:not([data-theme="light"]) body{background:#0d0f13;color:#e9ecf1}}
+body{font-family:-apple-system,system-ui,"PingFang SC","Hiragino Sans GB",sans-serif;padding:18px 16px 36px}
+.stage{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:22px}
+
+/* 手机：一列。顶栏、（组件塞进来的那一排）、聊天、加号那一行、打字框 */
+.phone{position:relative;width:390px;height:780px;max-width:100%;border-radius:40px;overflow:hidden;background:var(--bg);color:var(--ink);
+  display:flex;flex-direction:column;box-shadow:0 0 0 1px rgba(127,127,127,.25),0 30px 70px -30px rgba(0,0,0,.45)}
+.bar{height:56px;flex:none;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;letter-spacing:.04em;background:var(--bg);border-bottom:1px solid var(--line)}
+.chat{flex:1;min-height:0;overflow:hidden;padding:14px;display:flex;flex-direction:column;gap:10px}
+.b{max-width:76%;padding:10px 13px;border-radius:16px;font-size:15px;line-height:1.5;background:var(--card);box-shadow:0 1px 0 var(--line)}
+.b.me{align-self:flex-end;background:var(--me)}
+.drawer{position:relative;z-index:2;flex:none;height:0;overflow:hidden;background:var(--bg);transition:height .38s cubic-bezier(.3,1.35,.5,1)}
+.drawer.on{height:54px;border-top:1px solid var(--line)}
+.dr-in{display:flex;justify-content:flex-start;gap:8px;padding:11px 12px;overflow-x:auto;scrollbar-width:none}
+.dr-in::-webkit-scrollbar{display:none}
+.chip{flex:none;font:inherit;font-size:13px;color:var(--sub);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 11px;display:flex;align-items:center;gap:7px;cursor:pointer}
+.chip .sd{width:22px;height:13px;border-radius:7px;background:color-mix(in srgb,var(--ink) 22%,transparent);position:relative;transition:background .25s}
+.chip .sd::after{content:"";position:absolute;left:2px;top:2px;width:9px;height:9px;border-radius:50%;background:#fff;transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.chip.on{color:var(--ink)}.chip.on .sd{background:var(--accent)}.chip.on .sd::after{transform:translateX(9px)}
+/* 换窗以后：上一轮先藏起来，中间一行小字，点一下再露出来（淡一点） */
+.b.old{display:none}
+.chat.show .b.old{display:block;opacity:.5}
+.prevhint{display:none;margin:auto;color:var(--hint);font-size:13px;cursor:pointer;padding:10px 14px}
+.chat.cleared:not(.show) .prevhint{display:block}
+.inbar{position:relative;z-index:2;flex:none;display:flex;align-items:center;gap:8px;padding:9px 12px 11px;background:var(--bg);border-top:1px solid var(--line)}
+.ipt{flex:1;min-width:0;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 14px;font:inherit;font-size:15px;color:var(--ink);outline:none;-webkit-user-select:text;user-select:text}
+.ipt::placeholder{color:var(--hint)}
+.round{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--sub);display:grid;place-items:center;padding:0;cursor:pointer;position:relative}
+.plus{transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+.plus.on{transform:rotate(45deg)}
+.plus .pd{position:absolute;top:1px;right:1px;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--bg);transform:scale(0);transition:transform .3s cubic-bezier(.3,1.6,.5,1)}
+.plus.dot .pd{transform:scale(1)}
+
+/* 手机外面那张卡：只放演示用的开关，真正的设置在顶上菜单「设置」里 */
+.card{width:min(280px,100%);background:#fffdf9;color:#2e2a26;border-radius:18px;padding:16px 18px 14px;box-shadow:0 0 0 1px rgba(46,42,38,.1);font-size:13px}
+@media (prefers-color-scheme:dark){html:not([data-theme="light"]) .card{background:#1a1d24;color:#e9ecf1;box-shadow:0 0 0 1px rgba(255,255,255,.1)}}
+.card h1{margin:0;font-size:17px;text-align:center}
+.card .lede{margin:2px 0 10px;text-align:center;opacity:.65;font-size:12.5px}
+.card .r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid rgba(127,127,127,.18)}
+.seg{display:flex;gap:2px;padding:2px;border-radius:9px;background:rgba(127,127,127,.12)}
+.seg button,.cb{font:inherit;font-size:12.5px;color:inherit;opacity:.72;background:none;border:0;border-radius:7px;padding:4px 9px;cursor:pointer}
+.seg button[aria-pressed="true"]{opacity:1;font-weight:600;background:rgba(127,127,127,.22)}
+.cb{opacity:1;border:1px solid rgba(127,127,127,.3)}
+.cb:active,.seg button:active{transform:scale(.94)}
+.card .tip{margin:10px 0 0;opacity:.7;font-size:12px;line-height:1.75}
+
+/* 手机宽度：整页锁成一屏，手机铺满，卡片挪到下面去 */
+@media (max-width:480px){
+  body{padding:0}.stage{gap:0}
+  .phone{width:100vw;height:100dvh;border-radius:0;box-shadow:none}
+  .card{width:100%;border-radius:0;margin:0}
+}
+/* ?embed=1：嵌在仓库首页的假手机里，只留手机；演示开关在外面那张卡上 */
+.embed .card{display:none}
+.embed,.embed body{height:100%;overflow:hidden;overscroll-behavior:none}
+.embed body{padding:0}.embed .stage{display:block}
+.embed .phone{width:100vw;height:100dvh;border-radius:0;box-shadow:none}
+</style>
+<link rel="stylesheet" href="maple-crab.css">
+</head>
+<body>
+<div class="stage">
+  <div class="phone" id="phone">
+    <div class="bar">聊天</div>
+    <div class="chat" id="chat">
+      <div class="b">今天风好大。</div>
+      <div class="b me">刚出门，伞差点被吹跑。</div>
+      <div class="b">那就别出去了，在家待着吧。</div>
+      <div class="b me">好，下午看书。</div>
+      <div class="b">看哪本？</div>
+      <div class="prevhint" id="prevhint">点一下，看上一轮</div>
+    </div>
+    <div class="drawer" id="drawer"><div class="dr-in">
+      <button type="button" class="chip" id="swapWin">换窗</button>
+      <button type="button" class="chip on" id="treeSw" aria-pressed="true"><span class="sd"></span>头顶的螃蟹</button>
+      <button type="button" class="chip">照片</button>
+      <button type="button" class="chip">位置</button>
+    </div></div>
+    <div class="inbar">
+      <button type="button" class="round plus" id="plus" aria-label="更多"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="pd"></span></button>
+      <input class="ipt" id="ipt" placeholder="说点什么…" aria-label="输入消息" enterkeyhint="send">
+      <button type="button" class="round" id="send" aria-label="发送"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+    </div>
+  </div>
+  <aside class="card">
+    <h1>枫枝螃蟹</h1>
+    <p class="lede">演示里的未读和聊天都是编的。</p>
+    <div class="r"><span>未读</span><span class="seg" id="unread"></span></div>
+    <div class="r"><span>来一条新的</span><button type="button" class="cb" id="newOne">来</button></div>
+    <div class="r"><span>重新来</span><button type="button" class="cb" id="again">再来一次</button></div>
+    <p class="tip">点螃蟹，或者把它往下拽：顶栏下面打开那一排菜单。长按螃蟹：出一排小东西，按着滑过去松手就选，「…」展开全部；哪一类在菜单「长按」里换。挂在枫枝还是秋千、一行字还是水滴、风和叶子、收起，都在菜单「设置」里。切字在「玩一下」里，切到螃蟹就结束。收起以后，在打字框左边的加号里打开。</p>
+  </aside>
+</div>
+
+<script src="crab-art.js"></script>
+<script src="../paper-crumple/paper-crumple.js"></script>
+<script src="maple-crab.js"></script>
+<script>
+(function () {
+  'use strict';
+  var root = document.documentElement;
+  if (/[?&]embed=1/.test(location.search)) root.classList.add('embed');
+
+  /* 演示数据：都是编的 */
+  var PLACES = [
+    { key: 'space', label: '动态' }, { key: 'call', label: '电话' }, { key: 'letter', label: '信' },
+    { key: 'album', label: '相册' }, { key: 'cal', label: '日历' }, { key: 'fish', label: '钓鱼' },
+    { key: 'shelf', label: '书架' }, { key: 'notes', label: '便签' }, { key: 'set', label: '设置' }
+  ];
+  var POOL = [
+    { place: 'space', text: '发了一条：今天风好大', at: '昨天 22:10' },
+    { place: 'fish', text: '钓到一条鱼', at: '20:41' },
+    { place: 'call', text: '打过来你没接', at: '18:12' },
+    { place: 'letter', text: '写了一封信，还没写完', at: '17:05' },
+    { place: 'album', text: '传了三张照片', at: '16:20' },
+    { place: 'cal', text: '明天下午三点有个提醒', at: '15:47' },
+    { place: 'space', text: '回了一句：我也觉得', at: '15:02' }
+  ];
+  var COUNTS = [[0, '没有'], [3, '一点'], [7, '好多']], count = 3, seq = 0;
+  function take(n) { return POOL.slice(0, n).map(function (m) { return { id: 'd' + (++seq), place: m.place, text: m.text, at: m.at }; }); }
+
+  var plus = document.getElementById('plus'), drawer = document.getElementById('drawer'), treeSw = document.getElementById('treeSw'), ipt = document.getElementById('ipt');
+  var hidden = false, unreadN = 0;
+  function dot() { plus.classList.toggle('dot', hidden && unreadN > 0); }
+  function label(k) { for (var i = 0; i < PLACES.length; i++) if (PLACES[i].key === k) return PLACES[i].label; return k; }
+
+  var mc = MapleCrab.mount(document.getElementById('phone'), {
+    bar: '.bar', chat: '#chat', bubble: '.b', input: '#ipt',
+    places: PLACES,
+    unread: take(count),
+    onGo: function (k) { mc.toast('去' + label(k)); },
+    onRead: function (m) { mc.toast('去' + label(m.place)); },
+    onUnread: function (n) { unreadN = n; dot(); },
+    onHide: function () { hidden = true; treeSw.classList.remove('on'); treeSw.setAttribute('aria-pressed', 'false'); dot(); mc.toast('收起来了，加号里能再打开'); },
+    onShow: function () { hidden = false; treeSw.classList.add('on'); treeSw.setAttribute('aria-pressed', 'true'); dot(); }
+  });
+
+  /* 打字框左边的加号：往上长出一行，「头顶的螃蟹」开关在里面 */
+  plus.addEventListener('click', function () {
+    var on = !drawer.classList.contains('on'); drawer.classList.toggle('on', on); plus.classList.toggle('on', on);
+    mc.brush();   /* 打字框上沿要挪了，搭在上面的叶子先拂掉 */
+  });
+  treeSw.addEventListener('click', function () { if (hidden) mc.show(); else mc.hide(); });
+
+  /* 「换窗」：借隔壁 paper-crumple 把这页聊天揉成纸团。组件本身不依赖它；只拷走这个文件夹时没有纸团，这颗就藏起来 */
+  var chatEl = document.getElementById('chat'), swapWin = document.getElementById('swapWin'), busy = false;
+  if (!window.PaperCrumple) swapWin.remove();
+  else swapWin.addEventListener('click', function () {
+    if (busy) return; busy = true;
+    drawer.classList.remove('on'); plus.classList.remove('on'); mc.brush(); chatEl.classList.remove('show');
+    var phone = document.getElementById('phone');
+    PaperCrumple.crumple(chatEl, {
+      host: phone, background: getComputedStyle(phone).backgroundColor,
+      floor: function () { return document.querySelector('.inbar').getBoundingClientRect().top - phone.getBoundingClientRect().top; }
+    }).then(function () {
+      chatEl.querySelectorAll('.b').forEach(function (b) { b.classList.add('old'); });
+      chatEl.classList.add('cleared'); busy = false;
+    });
+  });
+  document.getElementById('prevhint').addEventListener('click', function () { chatEl.classList.add('show'); });
+  function send() {
+    var v = ipt.value.trim(); if (!v) return; ipt.value = '';
+    var b = document.createElement('div'); b.className = 'b me'; b.textContent = v; document.getElementById('chat').appendChild(b);
+  }
+  ipt.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); send(); } });
+  document.getElementById('send').addEventListener('click', send);
+
+  /* 卡片上的演示开关 */
+  function setCount(n) {
+    count = n; mc.setUnread(take(n));
+    document.querySelectorAll('#unread button').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.v === n)); });
+  }
+  function newOne() { var p = POOL[Math.floor(Math.random() * POOL.length)]; mc.push({ id: 'd' + (++seq), place: p.place, text: p.text, at: '刚刚' }); }
+  var box = document.getElementById('unread');
+  COUNTS.forEach(function (c) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = c[1]; b.dataset.v = c[0]; b.setAttribute('aria-pressed', String(c[0] === count));
+    b.addEventListener('click', function () { setCount(c[0]); }); box.appendChild(b);
+  });
+  document.getElementById('newOne').addEventListener('click', newOne);
+  document.getElementById('again').addEventListener('click', function () { mc.again(); });
+
+  /* 给外面用：仓库首页把这三个开关放在手机外面那张卡上 */
+  window.MAPLE = { counts: COUNTS, unread: function (n) { if (n != null) setCount(n); return count; }, newOne: newOne, again: function () { mc.again(); } };
+})();
+</script>
+</body>
+</html>

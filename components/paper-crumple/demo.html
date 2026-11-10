@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>纸团换页 · 演示</title>
+<style>
+:root{
+  --bg:#f4f1ec; --card:#fffdfa; --ink:#453d36; --sub:#776f68; --hint:#9a8f85; --line:#e4ded6;
+  --accent:#b5533a; --me:#e6e9f2; --paper:#fbf8f2;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161d; --card:#1a1f28; --ink:#eef2f7; --sub:#9aabbf; --hint:#7b889b; --line:rgba(255,255,255,.09);
+    --accent:#e0a373; --me:#243042; --paper:#161b23;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161d; --card:#1a1f28; --ink:#eef2f7; --sub:#9aabbf; --hint:#7b889b; --line:rgba(255,255,255,.09);
+  --accent:#e0a373; --me:#243042; --paper:#161b23;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#e7e5e1;color:#2b2724}
+@media (prefers-color-scheme:dark){html:not([data-theme="light"]),html:not([data-theme="light"]) body{background:#0d0f13;color:#e9ecf1}}
+body{font-family:-apple-system,system-ui,"PingFang SC","Hiragino Sans GB",sans-serif;padding:18px 16px 36px;display:flex;justify-content:center}
+body.embed{padding:0;background:var(--bg)}
+.phone{position:relative;width:390px;height:780px;max-width:100%;border-radius:40px;overflow:hidden;background:var(--bg);color:var(--ink);
+  display:flex;flex-direction:column;box-shadow:0 0 0 1px rgba(127,127,127,.25),0 30px 70px -30px rgba(0,0,0,.45)}
+body.embed .phone{width:100%;height:100%;border-radius:0;box-shadow:none}
+.top{flex:none;height:56px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;border-bottom:1px solid var(--line);background:var(--card)}
+.chat{flex:1;min-height:0;overflow:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;background:var(--paper);position:relative}
+.b{max-width:76%;padding:9px 13px;border-radius:16px;font-size:14.5px;line-height:1.5;background:var(--card);box-shadow:0 1px 0 var(--line)}
+.b.me{align-self:flex-end;background:var(--me)}
+.chat.cleared .b{display:none}
+.chat.cleared.show .b{display:block;opacity:.55}
+.prev{display:none;margin:auto;border:0;background:none;color:var(--hint);font:inherit;font-size:13px;padding:10px;cursor:pointer}
+.chat.cleared .prev{display:block}
+.chat.cleared.show .prev{display:none}
+.bar{flex:none;display:flex;align-items:center;gap:12px;padding:10px 14px 18px;border-top:1px solid var(--line);background:var(--card)}
+.swap{border:0;background:none;font:inherit;font-size:13.5px;color:var(--accent);padding:6px 2px;cursor:pointer;position:relative}
+.swap::after{content:"";position:absolute;left:2px;right:2px;bottom:2px;height:1.5px;background:currentColor;opacity:.5;border-radius:1px}
+.swap:disabled{opacity:.4;cursor:default}
+.ta{flex:1;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--hint);display:flex;align-items:center;padding:0 12px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="top">聊天</div>
+  <div class="chat" id="chat">
+    <div class="b">今天风好大，出门差点被吹走。</div>
+    <div class="b me">那就别出门了，在家把那本书看完。</div>
+    <div class="b">看完了，结局好突然。</div>
+    <div class="b me">我也觉得，像是作者写到一半去吃饭了。</div>
+    <div class="b">那我也去吃饭。</div>
+    <div class="b me">吃完回来接着聊。</div>
+    <button class="prev" type="button" id="prev">点一下，看上一轮</button>
+  </div>
+  <div class="bar">
+    <button class="swap" type="button" id="swap">揉成纸团</button>
+    <div class="ta">说点什么…</div>
+  </div>
+</div>
+<script src="paper-crumple.js"></script>
+<script>
+(function () {
+  'use strict';
+  if (/[?&]embed=1/.test(location.search)) document.body.classList.add('embed');
+  var chat = document.getElementById('chat'), swap = document.getElementById('swap');
+  swap.addEventListener('click', function () {
+    if (chat.classList.contains('cleared')) { chat.classList.remove('cleared', 'show'); return; }   // 演示用：揉过以后再点一次，把聊天放回来
+    swap.disabled = true;
+    PaperCrumple.crumple(chat, {
+      host: document.querySelector('.phone'),
+      floor: function () { var p = document.querySelector('.phone').getBoundingClientRect(), b = document.querySelector('.bar').getBoundingClientRect(); return b.top - p.top; }
+    }).then(function () {
+      chat.classList.add('cleared'); swap.disabled = false; swap.textContent = '放回来';
+    });
+  });
+  document.getElementById('prev').addEventListener('click', function () { chat.classList.add('show'); });
+  new MutationObserver(function () { if (!chat.classList.contains('cleared')) swap.textContent = '揉成纸团'; }).observe(chat, { attributes: true, attributeFilter: ['class'] });
+})();
+</script>
+</body>
+</html>

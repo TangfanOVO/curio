@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>curio · 小珍玩</title>
+<meta name="description" content="一些前端小玩具和还在长的草稿，按 MIT 随便拿。">
+<style>
+:root{--bg:#f1eee8;--card:#fffdf9;--ink:#2e2a26;--sub:#776f68;--hint:#8f867e;--line:rgba(46,42,38,.1);--accent:#b5533a;--tint:rgba(46,42,38,.06)}
+@media (prefers-color-scheme:dark){:root{--bg:#111318;--card:#1a1d24;--ink:#e9ecf1;--sub:#9aa3b0;--hint:#7f8895;--line:rgba(255,255,255,.1);--accent:#e0a373;--tint:rgba(255,255,255,.06)}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 -apple-system,system-ui,"PingFang SC","Hiragino Sans GB",sans-serif}
+a{color:inherit}
+.top{max-width:980px;margin:0 auto;padding:28px 20px 4px;text-align:center}
+.top h1{margin:0;font-size:24px;letter-spacing:.02em}
+.top p{margin:2px 0 0;color:var(--sub);font-size:14px}
+/* 分区：一行字，选中的是枫红，底下一道线 */
+.tabs{max-width:980px;margin:12px auto 0;padding:0 20px;display:flex;justify-content:center;gap:26px;flex-wrap:wrap}
+.tabs button{position:relative;border:0;background:none;color:var(--sub);font:inherit;font-size:14.5px;padding:6px 2px;cursor:pointer;transition:color .2s}
+.tabs button::after{content:"";position:absolute;left:0;right:0;bottom:1px;height:2px;border-radius:1px;background:var(--accent);transform:scaleX(0);transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+.tabs button[aria-selected="true"]{color:var(--accent);font-weight:600}
+.tabs button[aria-selected="true"]::after{transform:scaleX(1)}
+.stage{max-width:980px;margin:18px auto 40px;padding:0 20px;display:flex;gap:28px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.phone{width:390px;height:800px;max-width:100%;border-radius:44px;padding:10px;background:#0c0d10;
+  box-shadow:0 0 0 1px rgba(127,127,127,.2),0 40px 80px -40px rgba(0,0,0,.5);flex:none}
+.phone iframe{display:block;width:100%;height:100%;border:0;border-radius:34px;background:#000}
+.info{width:340px;max-width:100%;background:var(--card);border-radius:22px;padding:22px 22px 18px;box-shadow:0 0 0 1px var(--line)}
+.info .k{font-size:11px;letter-spacing:.18em;color:var(--hint);text-transform:uppercase;text-align:center}
+.info h2{margin:2px 0 6px;font-size:20px;text-align:center}
+.info p{margin:0 0 12px;color:var(--sub);font-size:14px}
+.info dl{margin:0 0 14px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
+.info dt{color:var(--hint)}.info dd{margin:0}
+.row{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.row a{display:inline-flex;align-items:center;height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--line);color:var(--ink);font-size:13.5px;text-decoration:none}
+.row a.main{background:var(--ink);color:var(--bg);border-color:transparent}
+.ctl[hidden]{display:none}
+.ctl{margin:0 0 14px;padding:10px 12px;border-radius:14px;background:var(--tint)}
+.ctl .h{font-size:11.5px;color:var(--hint);margin:2px 0 4px;letter-spacing:.06em}
+.ctl .seg{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.ctl .seg:last-child{margin-bottom:0}
+.ctl button{border:1px solid var(--line);background:var(--card);color:inherit;font:inherit;font-size:12.5px;height:30px;padding:0 11px;border-radius:8px;cursor:pointer;transition:transform .2s cubic-bezier(.3,1.7,.5,1)}
+.ctl button:active{transform:scale(.94)}
+.ctl button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:600}
+.foot{max-width:980px;margin:0 auto 40px;padding:0 20px;color:var(--hint);font-size:12.5px;text-align:center}
+@media (max-width:760px){
+  .top{padding:18px 16px 0}.tabs{padding:0 16px}.stage{padding:0 16px;gap:16px;margin-top:12px}
+  .phone{width:100%;height:78dvh;border-radius:30px;padding:6px}.phone iframe{border-radius:25px}
+  .info{width:100%}
+}
+@media (prefers-reduced-motion:reduce){.tabs button::after,.ctl button{transition:none}}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>curio · 小珍玩</h1>
+  <p>一些前端小玩具和还在长的草稿，按 MIT 随便拿。点上面换一个，在手机里直接玩；喜欢哪个，就拿走那一个文件夹。</p>
+</header>
+<nav class="tabs" role="tablist" aria-label="分区"></nav>
+<main class="stage">
+  <div class="phone"><iframe id="view" title="演示"></iframe></div>
+  <section class="info" aria-live="polite">
+    <div class="k" id="i-k"></div>
+    <h2 id="i-t"></h2>
+    <p id="i-p"></p>
+    <div class="ctl" id="i-m" hidden>
+      <div class="h">未读（演示用）</div><div class="seg" id="m-unread"></div>
+      <div class="seg"><button type="button" id="m-new">来一条新的</button><button type="button" id="m-again">重新来</button></div>
+    </div>
+    <dl id="i-d"></dl>
+    <div class="row">
+      <a class="main" id="i-take" target="_blank" rel="noopener">拿走这一个</a>
+      <a id="i-open" target="_blank" rel="noopener">单独打开</a>
+    </div>
+  </section>
+</main>
+<p class="foot">纯前端，演示里的字都是编的。<a href="https://github.com/TangfanOVO/curio">GitHub</a></p>
+
+<script>
+(function () {
+  'use strict';
+  var REPO = 'https://github.com/TangfanOVO/curio/tree/main/';
+  var ITEMS = [
+    { id: 'maple', tab: '枫枝螃蟹', k: 'component', path: 'components/maple-crab', page: 'demo.html', ctl: 'maple',
+      p: '聊天页顶上挂一只像素小螃蟹，吊在一根枫枝上，或者抓着一根绳子荡。点它或往下拽，顶栏下面长出一排菜单；长按它，选个小东西满屏落下来；「玩一下」里可以切这页聊天的字。挂法、样子、季节都在菜单「设置」里换。',
+      d: [['依赖', '没有'], ['挂法', '枫枝 / 秋千'], ['协议', 'MIT；螃蟹的身子来自 clawd-tank（MIT）']] },
+    { id: 'crumple', tab: '纸团换页', k: 'component', path: 'components/paper-crumple', page: 'demo.html',
+      p: '点「揉成纸团」，这一页聊天连着上面的字一起起皱、卷进去，揉成一团。抓住它甩出去，撞墙、落地弹两下、贴地滚，停稳了淡掉；之后聊天区空着，点一下能看上一轮。',
+      d: [['依赖', 'html-to-image（MIT，从 CDN 现加载）'], ['画法', 'WebGL，没有 three.js'], ['协议', 'MIT']] }
+  ];
+  var tabs = document.querySelector('.tabs'), view = document.getElementById('view');
+  var cur = null;
+  ITEMS.forEach(function (it) {
+    var b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab'); b.textContent = it.tab; b.dataset.id = it.id;
+    b.addEventListener('click', function () { show(it.id, true); }); tabs.appendChild(b); it.btn = b;
+  });
+  function src(it, embed) { return it.path + '/' + it.page + (embed ? '?embed=1' : ''); }
+  function show(id, push) {
+    var it = ITEMS.filter(function (x) { return x.id === id; })[0] || ITEMS[0]; cur = it;
+    ITEMS.forEach(function (x) { x.btn.setAttribute('aria-selected', String(x === it)); });
+    document.getElementById('i-k').textContent = it.k;
+    document.getElementById('i-t').textContent = it.tab;
+    document.getElementById('i-p').textContent = it.p;
+    var dl = document.getElementById('i-d'); dl.innerHTML = '';
+    it.d.forEach(function (r) { var dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = r[0]; dd.textContent = r[1]; dl.appendChild(dt); dl.appendChild(dd); });
+    document.getElementById('i-take').href = REPO + it.path;
+    document.getElementById('i-open').href = src(it);
+    document.getElementById('i-m').hidden = it.ctl !== 'maple';
+    view.src = src(it, true);
+    if (push) try { history.replaceState(null, '', '#' + it.id); } catch (e) {}
+  }
+  /* 枫枝螃蟹那一格：演示开关放在手机外面，伸进 iframe 里拨 */
+  function buildMaple() {
+    var M; try { M = view.contentWindow.MAPLE; } catch (e) {}
+    if (!M) return;
+    var box = document.getElementById('m-unread'); box.innerHTML = '';
+    M.counts.forEach(function (c) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = c[1];
+      b.setAttribute('aria-pressed', String(c[0] === M.unread()));
+      b.addEventListener('click', function () { M.unread(c[0]); box.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); });
+      box.appendChild(b);
+    });
+    document.getElementById('m-new').onclick = function () { M.newOne(); };
+    document.getElementById('m-again').onclick = function () { M.again(); };
+  }
+  view.addEventListener('load', function () { if (cur && cur.ctl === 'maple') buildMaple(); });
+  show((location.hash || '').slice(1), false);
+})();
+</script>
+</body>
+</html>
