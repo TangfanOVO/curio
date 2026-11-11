@@ -157,7 +157,7 @@
     var CB = crabEl('hang'), CS = crabEl('swing'), crabB = CB.el, crabS = CS.el;
     var toast = mk('div', 'mc-toast'); toast.setAttribute('role', 'status');
     var dd = mk('div', 'mc-dd', '<div class="mc-gg" style="filter:url(#' + gooB + ')"><i class="tb"></i><i class="pb"></i></div><div class="mc-ct"></div>');
-    var ddc = dd.querySelector('.mc-ct'), BLOB = { tb: dd.querySelector('.tb'), pb: dd.querySelector('.pb') };
+    var ddc = dd.querySelector('.mc-ct'), ggEl = dd.querySelector('.mc-gg'), BLOB = { tb: dd.querySelector('.tb'), pb: dd.querySelector('.pb') };
     var pill = mk('div', 'mc-pill'), rain = mk('div', 'mc-rain');
     var game = mk('div', 'mc-game', '<canvas></canvas><div class="mc-hud"><span><b>0</b>分</span><button type="button" class="mc-ch mc-gx">不玩了</button></div>' +
       '<div class="mc-over" role="dialog"><b></b><span></span><div class="mc-bt"><button type="button" class="mc-ch main mc-gre">再来' + ul(7) + '</button><i>·</i><button type="button" class="mc-ch mc-gq">不玩了</button></div></div>');
@@ -320,7 +320,7 @@
         ddc.querySelectorAll('[data-opt]').forEach(function (b) { mark(b, !!S[b.dataset.opt], 'aria-checked'); });
       } else if (menu === 'press') ddc.querySelectorAll('[data-set]').forEach(function (b) { mark(b, S.press === b.dataset.set, 'aria-checked'); });
     }
-    function kick() { if (!ddraf) { ddlast = performance.now(); ddraf = requestAnimationFrame(ddStep); } }
+    function kick() { if (menu) dd.style.visibility = ''; if (!ddraf) { ddlast = performance.now(); ddraf = requestAnimationFrame(ddStep); } }
     function ddStep(now) {
       var dt = Math.max(0, Math.min(.033, (now - ddlast) / 1000)), busy = false; ddlast = now;
       ['tb', 'pb'].forEach(function (n) {
@@ -330,13 +330,24 @@
           b.v[q] = (b.v[q] || 0) + (-k * (b[q] - b.t[q]) - c * (b.v[q] || 0)) * dt; b[q] += b.v[q] * dt;
           if (Math.abs(b[q] - b.t[q]) > .3 || Math.abs(b.v[q]) > .3) busy = true;
         });
-        var el = BLOB[n], w = Math.max(0, b.w), h = Math.max(0, b.h);
-        el.style.transform = 'translate(' + b.x + 'px,' + b.y + 'px)'; el.style.width = w + 'px'; el.style.height = h + 'px'; el.style.borderRadius = Math.min(n === 'pb' ? 14 : 99, w / 2, h / 2) + 'px';
+      });
+      /* 带滤镜的那层跟着两滴水合起来的框走（外扩 40px），不铺满整页：WebKit 在水滴缩小时只擦水滴原来那个框，
+         滤镜晕出去的那一圈会留下旧像素（半透明的底上看得出一道道边框线）；这层自己的框一变，旧框就整块重画了 */
+      var X0 = Infinity, Y0 = Infinity, X1 = -Infinity, Y1 = -Infinity, M = 40;
+      ['tb', 'pb'].forEach(function (n) { var q = B[n], w = Math.max(0, q.w), h = Math.max(0, q.h); if (w > .5 && h > .5) { X0 = Math.min(X0, q.x); Y0 = Math.min(Y0, q.y); X1 = Math.max(X1, q.x + w); Y1 = Math.max(Y1, q.y + h); } });
+      if (X0 === Infinity) { X0 = Y0 = 0; ggEl.style.width = ggEl.style.height = '0px'; }
+      else { X0 -= M; Y0 -= M; ggEl.style.left = X0 + 'px'; ggEl.style.top = Y0 + 'px'; ggEl.style.width = (X1 + M - X0) + 'px'; ggEl.style.height = (Y1 + M - Y0) + 'px'; }
+      ['tb', 'pb'].forEach(function (n) {
+        var q = B[n], el = BLOB[n], w = Math.max(0, q.w), h = Math.max(0, q.h);
+        el.style.transform = 'translate(' + (q.x - X0) + 'px,' + (q.y - Y0) + 'px)'; el.style.width = w + 'px'; el.style.height = h + 'px'; el.style.borderRadius = Math.min(n === 'pb' ? 14 : 99, w / 2, h / 2) + 'px';
       });
       var b = B.pb, r = ddR, px = function (v) { return Math.max(0, v).toFixed(1) + 'px'; };   /* 内容只在那滴水里面露出来 */
       ddc.style.clipPath = 'inset(' + px(b.y - r.y) + ' ' + px(r.x + r.w - b.x - b.w) + ' ' + px(r.y + r.h - b.y - b.h) + ' ' + px(b.x - r.x) + ' round 14px)';
       ddraf = busy ? requestAnimationFrame(ddStep) : 0;
-      if (!busy && !menu) ['tb', 'pb'].forEach(function (n) { B[n].w = B[n].h = 0; BLOB[n].style.width = BLOB[n].style.height = '0px'; });   /* 停稳了又没开着：两滴都清干净 */
+      if (!busy && !menu) {   /* 停稳了又没开着：两滴都清干净，整层藏起来（下回打开再露） */
+        ['tb', 'pb'].forEach(function (n) { B[n].w = B[n].h = 0; BLOB[n].style.width = BLOB[n].style.height = '0px'; });
+        ggEl.style.width = ggEl.style.height = '0px'; dd.style.visibility = 'hidden';
+      }
     }
     ddc.addEventListener('click', function (e) {
       var r = e.target.closest('[data-r]');
